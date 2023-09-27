@@ -1,6 +1,6 @@
 import React, { Fragment } from "react";
 import { useConnection } from "../context/connection";
-import { shortenAccount } from "../utils";
+import { shortenAccount, formatToETH } from "../utils";
 import { networkInfoMap, supportedChains } from "../constants";
 import { Menu, Transition } from "@headlessui/react";
 import useBalance from "../hooks/useBalance";
@@ -22,7 +22,7 @@ const Connection = () => {
     return (
         <div className="flex gap-2 items-center">
             <div className="flex gap-2 items-center font-bold">
-                <span>{`${Number(ethBalance).toFixed(2)}ETH`}</span>
+                <span>{formatToETH(ethBalance)}</span>
                 <span>{shortenAccount(account)}</span>
             </div>
             <div className="flex gap-2 items-center">
