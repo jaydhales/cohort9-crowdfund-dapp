@@ -1,8 +1,11 @@
 import { Dialog, Transition } from "@headlessui/react";
 import React, { Fragment, useState } from "react";
+import useCampaign from "../hooks/useCampaign";
 
 const CreateCampaign = () => {
     let [isOpen, setIsOpen] = useState(false);
+    const { createCampaign } = useCampaign();
+
 
     function closeModal() {
         setIsOpen(false);
@@ -11,6 +14,12 @@ const CreateCampaign = () => {
     function openModal() {
         setIsOpen(true);
     }
+
+    const handleCreateCampaign = () => {
+       const response = createCampaign(0, 0, 0);
+       
+    }
+
     return (
         <Fragment>
             <button
@@ -86,7 +95,7 @@ const CreateCampaign = () => {
                                                 className="outline-0 py-2 px-1 rounded-lg mt-2 border border-blue-400"
                                             />
                                         </div>
-                                        <div className="cursor-pointer w-full rounded-md bg-blue-400 p-3 text-sm font-medium text-white hover:bg-opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 text-center">
+                                        <div className="cursor-pointer w-full rounded-md bg-blue-400 p-3 text-sm font-medium text-white hover:bg-opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 text-center" onClick={handleCreateCampaign}>
                                             Create Campaign
                                         </div>
                                     </form>

@@ -30,7 +30,7 @@ const Connection = () => {
                     if (chain === chainId) return null;
 
                     return (
-                        <div className="relative text-right">
+                        <div className="relative text-right" key={chain}>
                             <Menu
                                 as="div"
                                 className="relative inline-block text-left"

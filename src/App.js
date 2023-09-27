@@ -1,4 +1,5 @@
 import CreateCampaign from "./component/CreateCampaign";
+import Campaigns from "./component/Campaigns";
 import Header from "./component/Header";
 
 function App() {
@@ -7,6 +8,7 @@ function App() {
             <Header />
             <main className="mt-10">
                 <CreateCampaign />
+                <Campaigns />
             </main>
         </div>
     );
