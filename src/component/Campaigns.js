@@ -25,14 +25,14 @@ const Campaigns = () => {
                   <div
                      key={index}
                      className={`${
-                        isActive && "border-2 border-green-400"
+                        (isActive || formatDate(durationTime) > 0) && "border-2 border-green-400"
                      } rounded-lg overflow-hidden hover:scale-[101%]`}
                   >
                      <img
                         src={image}
                         alt="Crowfunding Illustration"
                         className={`w-full h-40 object-cover ${
-                           isActive && "border-b-[3px] border-b-green-300"
+                           (isActive || formatDate(durationTime) > 0) && "border-b-[3px] border-b-green-300"
                         }`}
                      />
                      <div className="p-4">
