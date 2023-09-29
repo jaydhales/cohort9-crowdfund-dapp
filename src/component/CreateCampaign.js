@@ -47,7 +47,7 @@ const CreateCampaign = () => {
                 duration: 3
             });
             setDuration(1)
-            setTitle(0)
+            setTitle("")
             setGoal(0)
             closeModal();
         } catch (error) {

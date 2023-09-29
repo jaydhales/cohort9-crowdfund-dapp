@@ -5,6 +5,7 @@ import { formatEther, parseEther } from "ethers";
 import { formatDate } from "../utils";
 import useContribute from "../hooks/useContribute";
 import { useConnection } from "../context/connection";
+import toast from "react-hot-toast";
 
 const Campaign = () => {
     const [amountInput, setAmountInput] = useState(0);
@@ -18,23 +19,28 @@ const Campaign = () => {
     if (state === "LOADING") return <p>Loading...</p>;
 
     const handleContribute = async () => {
+        let contributeToast;
         if (!isActive || !provider) return;
         if (amountInput <= 0) return alert("Enter a non-zero amount!");
 
         try {
             setSendingTx(true);
+            contributeToast = toast.loading("Contributing")
             const tx = await contribute(id, parseEther(String(amountInput)));
             const receipt = await tx.wait();
 
-            if (receipt.status === 0) return alert("tx failed");
+            if (receipt.status === 0) return toast.error("tx failed", { id: contributeToast });
 
-            alert("Thanks for contributing!!");
+            toast.success("Thanks for contributing!!", {
+                id: contributeToast,
+            });
+            setAmountInput(0)
         } catch (error) {
             console.log("error: ", error);
             if (error.info.error.code === 4001) {
-                return alert("You rejected the request");
+                return toast.error("You rejected the request", { id: contributeToast });
             }
-            alert("something went wrong");
+            toast.error("something went wrong", { id: contributeToast });
         } finally {
             setSendingTx(false);
         }

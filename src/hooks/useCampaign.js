@@ -48,7 +48,10 @@ const useCampaign = (id) => {
 
     useEffect(() => {
         // const handleContributeEthEvent = (id, balance) => id === campaign.id && setCampaign({ ...campaign, fundingBalance: balance })
-        const handleContributeEthEvent = (id) => fetchCampaign()
+        
+        const handleContributeEthEvent = (id) => {
+            fetchCampaign()
+        }
 
         const contract = getCrowdfundContractWithProvider(provider);
         contract.on("ContributeEth", handleContributeEthEvent);
