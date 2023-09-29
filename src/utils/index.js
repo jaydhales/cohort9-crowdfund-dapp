@@ -1,22 +1,78 @@
-import { ethers } from "ethers";
-import { supportedChains } from "../constants";
+import { ethers, toBigInt } from "ethers";
+import { rpcUrlsMap, supportedChains } from "../constants";
+import { crowdfundContractAddress } from "../constants/addresses";
+import crowdFundAbi from "../constants/abis/crowdfund.json";
 
 export const isSupportedChain = (chainId) =>
     supportedChains.includes(Number(chainId));
 
 export const shortenAccount = (account) =>
-    `${account.substring(0, 5)}...${account.substring(38)}`;
+    `${account.substring(0, 6)}...${account.substring(38)}`;
 
-export const getReadOnlyProvider = () =>
-    new ethers.JsonRpcProvider("https://goerli.base.org");
-
-export const contractAddr = "0x46f44F2D1af04D54ab5BCbEF9F4D0Df9baDc1B8C";
-
-export const formatToETH = (_bal) => `${Number(_bal).toFixed(2)} ETH`;
-
-export const formatDate = (_date) => {
-    const currentDate = Date.now() / 1000 / 3600;
-    const date = ethers.formatUnits(_date, 0) / 3600;
-    const timeLeft = (Math.floor(date - currentDate))
-    return timeLeft > 0 ? timeLeft : 0;
+export const getReadOnlyProvider = (chainId) => {
+    return new ethers.JsonRpcProvider(rpcUrlsMap[chainId]);
 };
+
+export const getContract = async (address, abi, provider, withWrite) => {
+    let signer;
+    if (withWrite) signer = await provider.getSigner();
+
+    return new ethers.Contract(address, abi, withWrite ? signer : provider);
+};
+
+export const getContractWithProvider = (address, abi, provider) => {
+    return new ethers.Contract(address, abi, provider);
+};
+
+export const getCrowdfundContract = async (provider, withWrite) => {
+    return await getContract(
+        crowdfundContractAddress,
+        crowdFundAbi,
+        provider,
+        withWrite
+    );
+};
+
+export const getCrowdfundContractWithProvider = (provider) => {
+    return getContractWithProvider(
+        crowdfundContractAddress,
+        crowdFundAbi,
+        provider
+    );
+};
+
+export const formatDate = (time) => {
+    // Convert the timestamp to milliseconds by multiplying it by 1000
+    const date = new Date(time * 1000);
+
+    // Get the year, month, and day components
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1; // Months are zero-based, so add 1 to get the correct month
+    const day = date.getDate();
+
+    // Create an array of month names to map the numeric month to its name
+    const monthNames = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ];
+
+    // Get the month name using the month value as an index in the monthNames array
+    const monthName = monthNames[month - 1];
+
+    const formattedDate = `${monthName} ${day}, ${year}`;
+
+    return formattedDate;
+};
+
+export const calculateGasMargin = (value) =>
+    (toBigInt(value) * toBigInt(120)) / toBigInt(100);

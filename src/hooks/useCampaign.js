@@ -1,66 +1,64 @@
-import { ethers } from "ethers";
+import { useCallback, useEffect, useState } from "react";
+import useCampaignCount from "./useCampaignCount";
 import { useConnection } from "../context/connection";
-import { contractAddr } from "../utils";
-import contractAbi from "../utils/abi.json";
-import { useEffect, useState } from "react";
+import { getCrowdfundContract, getCrowdfundContractWithProvider } from "../utils";
+
+const useCampaign = (id) => {
+    const [campaign, setCampaign] = useState(null);
+    const [state, setState] = useState("LOADING");
+    const { provider } = useConnection();
+    const campaignLength = useCampaignCount();
+
+    const fetchCampaign = useCallback(async () => {
+
+        const campaignId = Number(id);
+        if (!campaignLength) return;
+        if (!campaignId || campaignId > campaignLength)
+            return setState("NOT_FOUND");
+        try {
+            const contract = await getCrowdfundContract(provider, false);
+
+            const campaignStruct = await contract.crowd(campaignId);
 
 
-const useCampaign = () => {
-   const [campaigns, setCampaigns] = useState([]);
-   const [contract, setContract] = useState(null)
-
-   const { isActive, provider } = useConnection();
-
-   const getContract = async (_provider) => {
-      setContract(new ethers.Contract(contractAddr, contractAbi, _provider));
-   }
-
-   const getData = async () => {
-      try {
-         const id = ethers.formatUnits(await contract.id(), 0);
-         const allCalls = []
-         for (let i = 1; i <= id; i++) {
-            const promise = contract.crowd(i);
-            allCalls.push(promise)
-         }
-         const results = await Promise.all(allCalls);
-
-         setCampaigns(results)
-
-      } catch (err) {
-         console.error(err);
-      }
-   }
+            const campaignDetails = {
+                id: campaignId,
+                title: campaignStruct.title,
+                fundingGoal: campaignStruct.fundingGoal,
+                owner: campaignStruct.owner,
+                durationTime: Number(campaignStruct.durationTime),
+                isActive: campaignStruct.isActive,
+                fundingBalance: campaignStruct.fundingBalance,
+                contributors: await contract.getContributors(id),
+            };
 
 
-   useEffect(() => {
-      if (!isActive) return;
-      getContract(provider);
-   }, [isActive, provider])
+            setCampaign(campaignDetails);
+            setState("LOADED");
+        } catch (error) {
+            console.error("Error fetching campaigns:", error);
+            setState("NOT_FOUND");
+        }
+    }, [campaignLength, id, provider]);
 
-   useEffect(() => {
-      if (!contract) return;
-      getData(contract)
-   }, [contract]) // eslint-disable-line react-hooks/exhaustive-deps
+    useEffect(() => {
+        fetchCampaign();
+    }, [campaignLength, fetchCampaign, id, provider]);
 
-   const createCampaign = async (_title,
-      _fundingGoal,
-      _durationTime) => {
-      try {
-         const signer = await provider.getSigner();
-         await contract.connect(signer).proposeCampaign(_title, _fundingGoal, _durationTime);
-         return { status: true, msg: "Successfully created Campaign" };
-      } catch (err) {
-         console.error(err);
-         return { status: false, msg: err.message }
-      }
 
-   }
+    useEffect(() => {
+        // const handleContributeEthEvent = (id, balance) => id === campaign.id && setCampaign({ ...campaign, fundingBalance: balance })
+        const handleContributeEthEvent = (id) => fetchCampaign()
 
-   return {
-      campaigns,
-      createCampaign
-   }
-}
+        const contract = getCrowdfundContractWithProvider(provider);
+        contract.on("ContributeEth", handleContributeEthEvent);
+
+        return () => {
+            contract.off("ContributeEth", handleContributeEthEvent);
+        };
+    }, [fetchCampaign, provider])
+
+    return { campaign, state };
+};
 
 export default useCampaign;

@@ -1,11 +1,20 @@
 import { Dialog, Transition } from "@headlessui/react";
 import React, { Fragment, useState } from "react";
-import useCampaign from "../hooks/useCampaign";
+import useProposeCampaign from "../hooks/useProposeCampaign";
+import { useConnection } from "../context/connection";
+import { supportedChains } from "../constants";
+import { parseEther } from "ethers";
+import toast from "react-hot-toast";
 
 const CreateCampaign = () => {
     let [isOpen, setIsOpen] = useState(false);
-    const { createCampaign } = useCampaign();
+    const [title, setTitle] = useState("");
+    const [goal, setGoal] = useState(0.5);
+    const [duration, setDuration] = useState(1);
+    const [sendingTx, setSendingTx] = useState(false);
+    const { connect, isActive, account, switchToChain } = useConnection();
 
+    const proposeCampaign = useProposeCampaign();
 
     function closeModal() {
         setIsOpen(false);
@@ -15,11 +24,41 @@ const CreateCampaign = () => {
         setIsOpen(true);
     }
 
-    const handleCreateCampaign = () => {
-       const response = createCampaign(0, 0, 0);
-       
-    }
+    const handleProposeCampaign = async () => {
+        let campaignToast;
+        if (!title || !goal || !duration)
+            return toast.error("Please provide all values");
+        if (!isActive) return toast.error("please, connect");
+        try {
+            setSendingTx(true);
+            campaignToast = toast.loading("Creating Campaign")
+            const tx = await proposeCampaign(
+                title,
+                parseEther(String(goal)),
+                duration * 60
+            );
+            const receipt = await tx.wait();
+            if (receipt.status === 0) return toast.error("tx failed", {
+                id: campaignToast
+            });
 
+            toast.success("campaign created!!",  {
+                id: campaignToast,
+                duration: 3
+            });
+            setDuration(1)
+            setTitle(0)
+            setGoal(0)
+            closeModal();
+        } catch (error) {
+            console.log("error: ", error);
+            toast.error("You rejected the request", {
+                id: campaignToast
+            })
+        } finally {
+            setSendingTx(false);
+        }
+    };
     return (
         <Fragment>
             <button
@@ -30,7 +69,7 @@ const CreateCampaign = () => {
             </button>
 
             <Transition appear show={isOpen} as={Fragment}>
-                <Dialog as="div" className="relative z-10" onClose={closeModal}>
+                <Dialog as="div" className="relative z-10" onClose={() => !sendingTx && closeModal()}>
                     <Transition.Child
                         as={Fragment}
                         enter="ease-out duration-300"
@@ -67,22 +106,32 @@ const CreateCampaign = () => {
                                             Consequuntur, numquam.
                                         </p>
                                     </div>
-                                    <form className="mt-4 space-y-4">
+                                    <div className="mt-4 space-y-4">
                                         <div className="flex flex-col">
                                             <label className="font-bold">
                                                 Title
                                             </label>
                                             <input
+                                                value={title}
+                                                onChange={(e) =>
+                                                    setTitle(e.target.value)
+                                                }
                                                 type="text"
                                                 className="outline-0 py-2 px-1 rounded-lg mt-2 border border-blue-400"
                                             />
                                         </div>
                                         <div className="flex flex-col">
                                             <label className="font-bold">
-                                                Goal
+                                                Goal (ETH Amount)
                                             </label>
                                             <input
-                                                type="text"
+                                                value={goal}
+                                                onChange={(e) =>
+                                                    setGoal(
+                                                        Number(e.target.value)
+                                                    )
+                                                }
+                                                type="number"
                                                 className="outline-0 py-2 px-1 rounded-lg mt-2 border border-blue-400"
                                             />
                                         </div>
@@ -91,14 +140,48 @@ const CreateCampaign = () => {
                                                 Duration(Minutes)
                                             </label>
                                             <input
+                                                value={duration}
+                                                onChange={(e) =>
+                                                    setDuration(
+                                                        Number(e.target.value)
+                                                    )
+                                                }
                                                 type="number"
                                                 className="outline-0 py-2 px-1 rounded-lg mt-2 border border-blue-400"
                                             />
                                         </div>
-                                        <div className="cursor-pointer w-full rounded-md bg-blue-400 p-3 text-sm font-medium text-white hover:bg-opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 text-center" onClick={handleCreateCampaign}>
-                                            Create Campaign
-                                        </div>
-                                    </form>
+
+                                        {isActive ? (
+                                            <button
+                                                onClick={handleProposeCampaign}
+                                                className="block cursor-pointer w-full rounded-md bg-blue-400 p-3 text-sm font-medium text-white hover:bg-opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 text-center disabled:bg-opacity-90 disabled:cursor-not-allowed"
+                                                disabled={sendingTx}
+                                            >
+                                                {sendingTx
+                                                    ? "Creating Campaign..."
+                                                    : "Create Campaign"}
+                                            </button>
+                                        ) : account ? (
+                                            <div
+                                                onClick={() =>
+                                                    switchToChain(
+                                                        supportedChains[0]
+                                                    )
+                                                }
+                                                className="cursor-pointer w-full rounded-md bg-blue-400 p-3 text-sm font-medium text-white hover:bg-opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 text-center"
+                                            >
+                                                Switch to Sepolia
+                                            </div>
+                                        ) : (
+                                            <div
+                                                onClick={connect}
+                                                disabled={sendingTx}
+                                                className="cursor-pointer w-full rounded-md bg-blue-400 p-3 text-sm font-medium text-white hover:bg-opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 text-center"
+                                            >
+                                                Connect
+                                            </div>
+                                        )}
+                                    </div>
                                 </Dialog.Panel>
                             </Transition.Child>
                         </div>

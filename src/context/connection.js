@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { getReadOnlyProvider, isSupportedChain } from "../utils";
-import { networkInfoMap } from "../constants";
+import { defaultReadonlyChainId, networkInfoMap } from "../constants";
 import { ethers } from "ethers";
 
 const Connection = createContext();
@@ -9,7 +9,9 @@ const ConnectionProvider = ({ children }) => {
     const [account, setAccount] = useState();
     const [chainId, setChainId] = useState();
     const [isActive, setIsActive] = useState(false);
-    const [provider, setProvider] = useState(getReadOnlyProvider());
+    const [provider, setProvider] = useState(
+        getReadOnlyProvider(defaultReadonlyChainId)
+    );
 
     const connect = async () => {
         if (window.ethereum === undefined)
@@ -28,7 +30,7 @@ const ConnectionProvider = ({ children }) => {
             setAccount(undefined);
             setChainId(undefined);
             setIsActive(false);
-            return setProvider(getReadOnlyProvider());
+            return setProvider(getReadOnlyProvider(defaultReadonlyChainId));
         }
         const chain = await window.ethereum.request({
             method: "eth_chainId",
@@ -42,7 +44,7 @@ const ConnectionProvider = ({ children }) => {
         } else {
             setProvider();
             setIsActive(false);
-            setProvider(getReadOnlyProvider());
+            setProvider(getReadOnlyProvider(defaultReadonlyChainId));
         }
     };
 
@@ -53,7 +55,7 @@ const ConnectionProvider = ({ children }) => {
             setProvider(new ethers.BrowserProvider(window.ethereum));
         } else {
             setIsActive(false);
-            setProvider(getReadOnlyProvider());
+            setProvider(getReadOnlyProvider(defaultReadonlyChainId));
         }
     };
 
